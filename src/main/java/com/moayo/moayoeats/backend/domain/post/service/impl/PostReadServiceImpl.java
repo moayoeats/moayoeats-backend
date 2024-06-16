@@ -347,7 +347,11 @@ public class PostReadServiceImpl implements PostReadService {
     }
 
     private List<BriefPostResponse> getAllStatusPosts(int page, PostStatusEnum status, User user) {
-        List<Post> posts = postCustomRepository.getPostsByStatus(page, status, user);
+        TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                .withStatus(status)
+                .orderByDistance(user)
+                .build();
+        List<Post> posts = postCustomRepository.getPosts(query,page);
         return postsToBriefResponses(posts);
     }
 
