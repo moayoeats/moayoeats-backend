@@ -17,6 +17,10 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.PrecisionModel;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -38,11 +42,7 @@ public class User {
     private String nickname;
 
     @Column
-    private Double latitude;
-
-    @Column
-    private Double longitude;
-
+    private Point location;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     List<Review> reviews;
@@ -71,8 +71,8 @@ public class User {
     }
 
     public void updateAddress(Double latitude, Double longitude) {
-        this.latitude = latitude;
-        this.longitude = longitude;
+        GeometryFactory geomFactory = new GeometryFactory(new PrecisionModel(), 4326);//4326: Point용 SRID
+        this.location = geomFactory.createPoint(new Coordinate(longitude, latitude));
     }
 
 }
