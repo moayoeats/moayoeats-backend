@@ -12,6 +12,7 @@ import com.moayo.moayoeats.backend.domain.post.entity.PostStatusEnum;
 import com.moayo.moayoeats.backend.domain.post.exception.PostErrorCode;
 import com.moayo.moayoeats.backend.domain.post.repository.PostCustomRepository;
 import com.moayo.moayoeats.backend.domain.post.repository.PostRepository;
+import com.moayo.moayoeats.backend.domain.post.repository.builder.PostQueryBuilder;
 import com.moayo.moayoeats.backend.domain.post.service.PostReadService;
 import com.moayo.moayoeats.backend.domain.user.entity.User;
 import com.moayo.moayoeats.backend.domain.userpost.entity.UserPost;
@@ -21,6 +22,9 @@ import com.moayo.moayoeats.backend.domain.userpost.repository.UserPostRepository
 import com.moayo.moayoeats.backend.global.exception.GlobalException;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,6 +40,7 @@ public class PostReadServiceImpl implements PostReadService {
     private final UserPostRepository userPostRepository;
     private final PostCustomRepository postCustomRepository;
     private final MenuRepository menuRepository;
+    private final EntityManager entityManager;
     private static final int pagesize = 5;
 
     @Override
@@ -133,9 +138,17 @@ public class PostReadServiceImpl implements PostReadService {
             return getAllPosts(page, user);
         } else if (checkIfCategoryEnum(category)) {
             CategoryEnum categoryEnum = CategoryEnum.valueOf(category);
-            posts = postCustomRepository.getPostsByCategory(page, user, categoryEnum);
+            TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                    .withCategory(categoryEnum)
+                    .orderByDistance(user)
+                    .build();
+            posts = postCustomRepository.getPosts(query,page);
         } else {
-            posts = postCustomRepository.getPostsByCuisine(page, user, category);
+            TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                    .withCuisine(category)
+                    .orderByDistance(user)
+                    .build();
+            posts = postCustomRepository.getPosts(query,page);
         }
         return postsToBriefResponses(posts);
     }
