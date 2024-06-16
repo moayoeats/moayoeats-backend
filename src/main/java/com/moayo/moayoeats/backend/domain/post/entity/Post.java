@@ -3,19 +3,7 @@ package com.moayo.moayoeats.backend.domain.post.entity;
 import com.moayo.moayoeats.backend.domain.menu.entity.Menu;
 import com.moayo.moayoeats.backend.domain.offer.entity.Offer;
 import com.moayo.moayoeats.backend.global.entity.BaseTime;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import java.time.LocalDateTime;
-import java.util.List;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,6 +12,9 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -51,10 +42,6 @@ public class Post extends BaseTime {
     private Integer deliveryCost;
 
     @Column
-    @Enumerated(EnumType.STRING)
-    private CategoryEnum category;
-
-    @Column
     private String cuisine;
 
     @Column
@@ -78,7 +65,6 @@ public class Post extends BaseTime {
             String store,
             Integer minPrice,
             Integer deliveryCost,
-            CategoryEnum category,
             LocalDateTime deadline,
             PostStatusEnum postStatus,
             String cuisine,
@@ -90,7 +76,6 @@ public class Post extends BaseTime {
         this.amountIsSatisfied = false;
         this.deliveryCost = deliveryCost;
         this.deadline = deadline;
-        this.category = category;
         this.postStatus = postStatus;
         this.cuisine = cuisine;
         this.location = setLocation(longitude, latitude);
