@@ -65,16 +65,16 @@ public class PostReadServiceImpl implements PostReadService {
         List<UserPost> userPosts = getUserPostsByPost(post);
 
         return DetailedPostResponse.builder()
-            .longitude(post.getLongitude())
-            .latitude(post.getLatitude())
-            .store(post.getStore())
-            .minPrice(post.getMinPrice())
-            .deliveryCost(post.getDeliveryCost())
-            .menus(getNickMenus(userPosts))
-            .sumPrice(getSumPrice(userPosts, post))
-            .deadline(getDeadline(getDeadline(post)))
-            .status(post.getPostStatus())
-            .build();
+                .longitude(post.getLocation().getX())
+                .latitude(post.getLocation().getY())
+                .store(post.getStore())
+                .minPrice(post.getMinPrice())
+                .deliveryCost(post.getDeliveryCost())
+                .menus(getNickMenus(userPosts))
+                .sumPrice(getSumPrice(userPosts, post))
+                .deadline(getDeadline(getDeadline(post)))
+                .status(post.getPostStatus())
+                .build();
     }
 
     @Override
@@ -84,20 +84,20 @@ public class PostReadServiceImpl implements PostReadService {
         User host = getAuthor(userPosts);
 
         return DetailedPostResponse.builder()
-            .id(post.getId())
-            .hostId(host.getId())
-            .hostNick(host.getNickname())
-            .longitude(post.getLongitude())
-            .latitude(post.getLatitude())
-            .store(post.getStore())
-            .minPrice(post.getMinPrice())
-            .deliveryCost(post.getDeliveryCost())
-            .menus(getNickMenus(userPosts))
-            .sumPrice(getSumPrice(userPosts, post))
-            .deadline(getDeadline(getDeadline(post)))
-            .status(post.getPostStatus())
-            .role(getRoleByUserAndUserPosts(user, userPosts))
-            .build();
+                .id(post.getId())
+                .hostId(host.getId())
+                .hostNick(host.getNickname())
+                .longitude(post.getLongitude())
+                .latitude(post.getLatitude())
+                .store(post.getStore())
+                .minPrice(post.getMinPrice())
+                .deliveryCost(post.getDeliveryCost())
+                .menus(getNickMenus(userPosts))
+                .sumPrice(getSumPrice(userPosts, post))
+                .deadline(getDeadline(getDeadline(post)))
+                .status(post.getPostStatus())
+                .role(getRoleByUserAndUserPosts(user, userPosts))
+                .build();
     }
 
     @Override
@@ -110,17 +110,17 @@ public class PostReadServiceImpl implements PostReadService {
         } else if (checkIfCategoryEnum(category)) {
             CategoryEnum categoryEnum = CategoryEnum.valueOf(category);
             Pageable pageable = PageRequest.of(page, pagesize,
-                Sort.by("deadline").descending());
+                    Sort.by("deadline").descending());
 
             posts = postRepository.findAllByCategoryEquals(pageable, categoryEnum)
-                .getContent();
+                    .getContent();
 
         } else {
             Pageable pageable = PageRequest.of(page, pagesize,
-                Sort.by("deadline").descending());
+                    Sort.by("deadline").descending());
 
             posts = postRepository.findAllByCuisineEquals(pageable, category)
-                .getContent();
+                    .getContent();
         }
         return postsToBriefResponses(posts);
     }
@@ -142,7 +142,7 @@ public class PostReadServiceImpl implements PostReadService {
 
     @Override
     public List<BriefPostResponse> getStatusPostsByCategory(int page, String category,
-        String status, User user) {
+                                                            String status, User user) {
         PostStatusEnum statusEnum = PostStatusEnum.valueOf(status);
 
         if (category.equals(CategoryEnum.ALL.toString())) {
@@ -151,12 +151,12 @@ public class PostReadServiceImpl implements PostReadService {
         } else if (checkIfCategoryEnum(category)) {
             CategoryEnum categoryEnum = CategoryEnum.valueOf(category);
             List<Post> posts = postCustomRepository.getPostsByStatusAndCategory(page,
-                statusEnum, categoryEnum, user);
+                    statusEnum, categoryEnum, user);
             return postsToBriefResponses(posts);
 
         } else {
             List<Post> posts = postCustomRepository.getPostsByStatusAndCuisine(page,
-                statusEnum, category, user);
+                    statusEnum, category, user);
             return postsToBriefResponses(posts);
         }
     }
@@ -165,7 +165,7 @@ public class PostReadServiceImpl implements PostReadService {
     public List<BriefPostResponse> searchPostForAnyone(int page, String keyword) {
         Pageable pageWithTenPosts = PageRequest.of(page, pagesize, Sort.by("deadline").descending());
         List<Post> posts = postRepository.findPostByStoreContaining(pageWithTenPosts, keyword)
-            .getContent();
+                .getContent();
         return postsToBriefResponses(posts);
     }
 
@@ -178,7 +178,7 @@ public class PostReadServiceImpl implements PostReadService {
 
     @Override
     public List<BriefPostResponse> searchStatusPost(int page, String keyword, String status,
-        User user) {
+                                                    User user) {
         PostStatusEnum statusEnum = PostStatusEnum.valueOf(status);
 
         List<Post> posts = postCustomRepository.getPostsByStatusAndKeyword(page, statusEnum, keyword, user);
@@ -194,18 +194,18 @@ public class PostReadServiceImpl implements PostReadService {
 
     private List<BriefPostResponse> postsToBriefResponses(List<Post> posts) {
         return posts.stream()
-            .map((Post post) ->
-                BriefPostResponse
-                    .builder()
-                    .id(post.getId())
-            .author(getAuthorNick(getUserPostsByPost(post)))
-                    .store(post.getStore())
-                    .deadline(getDeadline(getDeadline(post)))
-                    .minPrice(post.getMinPrice())
-                    .sumPrice(getSumPrice(getUserPostsByPost(post), post))
-                    .status(post.getPostStatus())
-            .build())
-            .toList();
+                .map((Post post) ->
+                        BriefPostResponse
+                                .builder()
+                                .id(post.getId())
+                                .author(getAuthorNick(getUserPostsByPost(post)))
+                                .store(post.getStore())
+                                .deadline(getDeadline(getDeadline(post)))
+                                .minPrice(post.getMinPrice())
+                                .sumPrice(getSumPrice(getUserPostsByPost(post), post))
+                                .status(post.getPostStatus())
+                                .build())
+                .toList();
     }
 
     private User getAuthor(List<UserPost> userPosts) {
@@ -269,7 +269,7 @@ public class PostReadServiceImpl implements PostReadService {
 
     private Post getPostById(Long postId) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new GlobalException(PostErrorCode.NOT_FOUND_POST));
+                .orElseThrow(() -> new GlobalException(PostErrorCode.NOT_FOUND_POST));
         return post;
     }
 
@@ -279,13 +279,13 @@ public class PostReadServiceImpl implements PostReadService {
 
     private List<NickMenusResponse> getNickMenus(List<UserPost> userposts) {
         List<NickMenusResponse> menus =
-            //List<UserPost> -> List<NickMenusResponse>
-            userposts.stream()
-                .map((UserPost userpost) -> new NickMenusResponse(userpost.getUser().getNickname(),
-                    //List<Menu> menus -> List<MenuResponse>
-                    getUserMenus(userpost.getUser(), userpost.getPost()).stream().map(
-                        (Menu menu) -> new MenuResponse(menu.getId(), menu.getMenuname(),
-                            menu.getPrice())).toList())).toList();
+                //List<UserPost> -> List<NickMenusResponse>
+                userposts.stream()
+                        .map((UserPost userpost) -> new NickMenusResponse(userpost.getUser().getNickname(),
+                                //List<Menu> menus -> List<MenuResponse>
+                                getUserMenus(userpost.getUser(), userpost.getPost()).stream().map(
+                                        (Menu menu) -> new MenuResponse(menu.getId(), menu.getMenuname(),
+                                                menu.getPrice())).toList())).toList();
         return menus;
     }
 
