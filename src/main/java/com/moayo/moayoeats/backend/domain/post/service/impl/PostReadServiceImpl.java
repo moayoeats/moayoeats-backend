@@ -112,14 +112,6 @@ public class PostReadServiceImpl implements PostReadService {
         if (category.equals(CategoryEnum.ALL.toString())) {
             posts = findPage(page);
 
-        } else if (checkIfCategoryEnum(category)) {
-            CategoryEnum categoryEnum = CategoryEnum.valueOf(category);
-            Pageable pageable = PageRequest.of(page, pagesize,
-                    Sort.by("deadline").descending());
-
-            posts = postRepository.findAllByCategoryEquals(pageable, categoryEnum)
-                    .getContent();
-
         } else {
             Pageable pageable = PageRequest.of(page, pagesize,
                     Sort.by("deadline").descending());
@@ -136,13 +128,6 @@ public class PostReadServiceImpl implements PostReadService {
 
         if (category.equals(CategoryEnum.ALL.toString())) {
             return getAllPosts(page, user);
-        } else if (checkIfCategoryEnum(category)) {
-            CategoryEnum categoryEnum = CategoryEnum.valueOf(category);
-            TypedQuery<Post> query = new PostQueryBuilder(entityManager)
-                    .withCategory(categoryEnum)
-                    .orderByDistance(user)
-                    .build();
-            posts = postCustomRepository.getPosts(query,page);
         } else {
             TypedQuery<Post> query = new PostQueryBuilder(entityManager)
                     .withCuisine(category)
@@ -160,16 +145,6 @@ public class PostReadServiceImpl implements PostReadService {
 
         if (category.equals(CategoryEnum.ALL.toString())) {
             return getAllStatusPosts(page, statusEnum, user);
-
-        } else if (checkIfCategoryEnum(category)) {
-            CategoryEnum categoryEnum = CategoryEnum.valueOf(category);
-            TypedQuery<Post> query = new PostQueryBuilder(entityManager)
-                    .withCategory(categoryEnum)
-                    .withStatus(statusEnum)
-                    .orderByDistance(user)
-                    .build();
-            List<Post> posts = postCustomRepository.getPosts(query,page);
-            return postsToBriefResponses(posts);
 
         } else {
             TypedQuery<Post> query = new PostQueryBuilder(entityManager)
@@ -353,15 +328,6 @@ public class PostReadServiceImpl implements PostReadService {
                 .build();
         List<Post> posts = postCustomRepository.getPosts(query,page);
         return postsToBriefResponses(posts);
-    }
-
-    private boolean checkIfCategoryEnum(String category) {
-        for (CategoryEnum c : CategoryEnum.values()) {
-            if (c.name().equals(category)) {
-                return true;
-            }
-        }
-        return false;
     }
 
 }
