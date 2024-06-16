@@ -128,11 +128,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public AddressResponse getAddress(User user) {
         checkNotExistUser(user);
-        if (user.getLatitude() == null || user.getLongitude() == null) {
+        if (user.getLocation() == null) {
             return new AddressResponse(37.5773588,
                 126.9771222);//default address to set a map center
         }
-        return new AddressResponse(user.getLatitude(), user.getLongitude());
+        return new AddressResponse(user.getLocation().getY(), user.getLocation().getX());
     }
 
     private void checkAlreadyExistUser(String email) {
