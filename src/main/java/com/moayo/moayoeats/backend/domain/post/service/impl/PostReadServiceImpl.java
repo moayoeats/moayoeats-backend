@@ -163,13 +163,21 @@ public class PostReadServiceImpl implements PostReadService {
 
         } else if (checkIfCategoryEnum(category)) {
             CategoryEnum categoryEnum = CategoryEnum.valueOf(category);
-            List<Post> posts = postCustomRepository.getPostsByStatusAndCategory(page,
-                    statusEnum, categoryEnum, user);
+            TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                    .withCategory(categoryEnum)
+                    .withStatus(statusEnum)
+                    .orderByDistance(user)
+                    .build();
+            List<Post> posts = postCustomRepository.getPosts(query,page);
             return postsToBriefResponses(posts);
 
         } else {
-            List<Post> posts = postCustomRepository.getPostsByStatusAndCuisine(page,
-                    statusEnum, category, user);
+            TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                    .withCuisine(category)
+                    .withStatus(statusEnum)
+                    .orderByDistance(user)
+                    .build();
+            List<Post> posts = postCustomRepository.getPosts(query,page);
             return postsToBriefResponses(posts);
         }
     }
