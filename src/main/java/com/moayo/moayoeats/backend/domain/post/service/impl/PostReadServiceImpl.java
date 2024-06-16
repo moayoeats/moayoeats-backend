@@ -206,7 +206,12 @@ public class PostReadServiceImpl implements PostReadService {
                                                     User user) {
         PostStatusEnum statusEnum = PostStatusEnum.valueOf(status);
 
-        List<Post> posts = postCustomRepository.getPostsByStatusAndKeyword(page, statusEnum, keyword, user);
+        TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                .withKeyword(keyword)
+                .withStatus(statusEnum)
+                .orderByDistance(user)
+                .build();
+        List<Post> posts = postCustomRepository.getPosts(query,page);
         return postsToBriefResponses(posts);
     }
 
