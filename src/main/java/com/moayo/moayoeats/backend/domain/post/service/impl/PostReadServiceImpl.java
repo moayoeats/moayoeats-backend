@@ -193,7 +193,11 @@ public class PostReadServiceImpl implements PostReadService {
     @Override
     public List<BriefPostResponse> searchPost(int page, String keyword, User user) {
 
-        List<Post> posts = postCustomRepository.getPostsByKeyword(page, user, keyword);
+        TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                .withKeyword(keyword)
+                .orderByDistance(user)
+                .build();
+        List<Post> posts = postCustomRepository.getPosts(query,page);
         return postsToBriefResponses(posts);
     }
 
