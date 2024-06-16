@@ -29,32 +29,17 @@ public class PostCreateServiceImpl implements PostCreateService {
         //get latitude and longitude from the coordinate
         Double [] location = getAddress(postReq.address());
 
-        String category = postReq.category();
-        Post post;
-        if (checkIfCategoryEnum(category)) {
-            //Build new post with the post request dto
-            post = Post.builder()
+        Post post = Post.builder()
                 .latitude(location[0])
                 .longitude(location[1])
                 .store(postReq.store())
                 .deliveryCost(getIntFromString(postReq.deliveryCost()))
                 .minPrice(getIntFromString(postReq.minPrice()))
                 .deadline(deadline)
-                .category(CategoryEnum.valueOf(category))
+                .cuisine(postReq.category())
                 .postStatus(PostStatusEnum.OPEN)
                 .build();
-        } else {
-            post = Post.builder()
-                .latitude(location[0])
-                .longitude(location[1])
-                .store(postReq.store())
-                .deliveryCost(getIntFromString(postReq.deliveryCost()))
-                .minPrice(getIntFromString(postReq.minPrice()))
-                .deadline(deadline)
-                .cuisine(category)
-                .postStatus(PostStatusEnum.OPEN)
-                .build();
-        }
+
         //save the post
         postRepository.save(post);
 
@@ -82,15 +67,6 @@ public class PostCreateServiceImpl implements PostCreateService {
         //make longitude and latitude into Double
         Double [] result = {Double.valueOf(location[0]),Double.valueOf(location[1])};
         return result;
-    }
-
-    private boolean checkIfCategoryEnum(String category) {
-        for (CategoryEnum c : CategoryEnum.values()) {
-            if (c.name().equals(category)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private LocalDateTime getDeadline(PostRequest postReq){
