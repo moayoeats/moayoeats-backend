@@ -335,10 +335,13 @@ public class PostReadServiceImpl implements PostReadService {
     private List<BriefPostResponse> getAllPosts(int page, User user) {
         List<Post> posts;
 
-        if (user.getLatitude() == null || user.getLongitude() == null) {
+        if (user.getLocation() == null) {
             posts = findPage(page);
         } else {
-            posts = postCustomRepository.getPostsByDistance(page, user);
+            TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                    .orderByDistance(user)
+                    .build();
+            posts = postCustomRepository.getPosts(query,page);
         }
         return postsToBriefResponses(posts);
     }
