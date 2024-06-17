@@ -17,11 +17,11 @@ spring:
   jpa:
     properties:
       hibernate:
-        ddl-auto: none
-        show_sql: true
-    show-sql: true
-    database-platform: org.hibernate.dialect.MySQL8Dialect
-    generate-ddl: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: none
+      show_sql: true
+      generate-ddl: true
 
   thymeleaf:
     cache: false
