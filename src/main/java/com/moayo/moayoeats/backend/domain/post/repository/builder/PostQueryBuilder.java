@@ -1,6 +1,5 @@
 package com.moayo.moayoeats.backend.domain.post.repository.builder;
 
-import com.moayo.moayoeats.backend.domain.post.entity.CategoryEnum;
 import com.moayo.moayoeats.backend.domain.post.entity.Post;
 import com.moayo.moayoeats.backend.domain.post.entity.PostStatusEnum;
 import com.moayo.moayoeats.backend.domain.user.entity.User;
@@ -8,18 +7,15 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import org.locationtech.jts.geom.Point;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PostQueryBuilder {
 
-    private StringBuilder jpql;
+    private final StringBuilder jpql;
     @PersistenceContext
-    private EntityManager entityManager;
-    private TypedQuery<Post> query;
-    private PostStatusEnum status;
-    private CategoryEnum category;
-    private String keyword;
-    private String cuisine;
-    private Point userLocation;
+    private final EntityManager entityManager;
+    private final Map<String, Object> parameters = new HashMap<>();
 
     public PostQueryBuilder(EntityManager entityManager) {
         this.entityManager = entityManager;
@@ -27,47 +23,40 @@ public class PostQueryBuilder {
     }
 
     public PostQueryBuilder withStatus(PostStatusEnum status) {
-        this.status = status;
         if (status != null) {
             jpql.append(" AND p.postStatus = :status");
-        }
-        return this;
-    }
-
-    public PostQueryBuilder withCategory(CategoryEnum category) {
-        this.category = category;
-        if (category != null) {
-            jpql.append(" AND p.category = :category");
+            parameters.put("status", status);
         }
         return this;
     }
 
     public PostQueryBuilder withKeyword(String keyword) {
-        this.keyword = keyword;
         if (keyword != null && !keyword.trim().isEmpty()) {
             jpql.append(" AND p.store LIKE :keyword");
+            parameters.put("keyword", "%" + keyword + "%");
         }
         return this;
     }
 
     public PostQueryBuilder withCuisine(String cuisine) {
-        this.cuisine = cuisine;
         if (cuisine != null && !cuisine.trim().isEmpty()) {
             jpql.append(" AND p.cuisine = :cuisine");
+            parameters.put("cuisine", cuisine);
         }
         return this;
     }
 
     public PostQueryBuilder orderByDistance(User user) {
-        this.userLocation = user.getLocation();
+        Point userLocation = user.getLocation();
         if (userLocation != null) {
             jpql.append(" AND p.location IS NOT NULL ORDER BY distance(p.location, :userLocation) ASC");
-            return AndOrderByDeadline();
+            parameters.put("userLocation", userLocation);
+            return andOrderByDeadline();
         }
         return orderByDeadline();
     }
 
-    public PostQueryBuilder AndOrderByDeadline() {
+    public PostQueryBuilder andOrderByDeadline() {
         jpql.append(", p.deadline DESC");
         return this;
     }
@@ -78,24 +67,8 @@ public class PostQueryBuilder {
     }
 
     public TypedQuery<Post> build() {
-        query = entityManager.createQuery(jpql.toString(), Post.class);
-
-        if (status != null) {
-            query.setParameter("status", status);
-        }
-        if (category != null) {
-            query.setParameter("category", category);
-        }
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            query.setParameter("keyword", "%" + keyword + "%");
-        }
-        if (cuisine != null && !cuisine.trim().isEmpty()) {
-            query.setParameter("cuisine", cuisine);
-        }
-        if (userLocation != null) {
-            query.setParameter("userLocation", userLocation);
-        }
-
+        TypedQuery<Post> query = entityManager.createQuery(jpql.toString(), Post.class);
+        parameters.forEach(query::setParameter);
         return query;
     }
 }
