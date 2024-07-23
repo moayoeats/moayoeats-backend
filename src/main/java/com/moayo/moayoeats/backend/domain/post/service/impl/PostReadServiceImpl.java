@@ -12,6 +12,7 @@ import com.moayo.moayoeats.backend.domain.post.entity.PostStatusEnum;
 import com.moayo.moayoeats.backend.domain.post.exception.PostErrorCode;
 import com.moayo.moayoeats.backend.domain.post.repository.PostCustomRepository;
 import com.moayo.moayoeats.backend.domain.post.repository.PostRepository;
+import com.moayo.moayoeats.backend.domain.post.repository.builder.PostQueryBuilder;
 import com.moayo.moayoeats.backend.domain.post.service.PostReadService;
 import com.moayo.moayoeats.backend.domain.user.entity.User;
 import com.moayo.moayoeats.backend.domain.userpost.entity.UserPost;
@@ -21,6 +22,9 @@ import com.moayo.moayoeats.backend.domain.userpost.repository.UserPostRepository
 import com.moayo.moayoeats.backend.global.exception.GlobalException;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,6 +40,7 @@ public class PostReadServiceImpl implements PostReadService {
     private final UserPostRepository userPostRepository;
     private final PostCustomRepository postCustomRepository;
     private final MenuRepository menuRepository;
+    private final EntityManager entityManager;
     private static final int pagesize = 5;
 
     @Override
@@ -65,16 +70,16 @@ public class PostReadServiceImpl implements PostReadService {
         List<UserPost> userPosts = getUserPostsByPost(post);
 
         return DetailedPostResponse.builder()
-            .longitude(post.getLongitude())
-            .latitude(post.getLatitude())
-            .store(post.getStore())
-            .minPrice(post.getMinPrice())
-            .deliveryCost(post.getDeliveryCost())
-            .menus(getNickMenus(userPosts))
-            .sumPrice(getSumPrice(userPosts, post))
-            .deadline(getDeadline(getDeadline(post)))
-            .status(post.getPostStatus())
-            .build();
+                .longitude(post.getLocation().getX())
+                .latitude(post.getLocation().getY())
+                .store(post.getStore())
+                .minPrice(post.getMinPrice())
+                .deliveryCost(post.getDeliveryCost())
+                .menus(getNickMenus(userPosts))
+                .sumPrice(getSumPrice(userPosts, post))
+                .deadline(getDeadline(getDeadline(post)))
+                .status(post.getPostStatus())
+                .build();
     }
 
     @Override
@@ -84,20 +89,20 @@ public class PostReadServiceImpl implements PostReadService {
         User host = getAuthor(userPosts);
 
         return DetailedPostResponse.builder()
-            .id(post.getId())
-            .hostId(host.getId())
-            .hostNick(host.getNickname())
-            .longitude(post.getLongitude())
-            .latitude(post.getLatitude())
-            .store(post.getStore())
-            .minPrice(post.getMinPrice())
-            .deliveryCost(post.getDeliveryCost())
-            .menus(getNickMenus(userPosts))
-            .sumPrice(getSumPrice(userPosts, post))
-            .deadline(getDeadline(getDeadline(post)))
-            .status(post.getPostStatus())
-            .role(getRoleByUserAndUserPosts(user, userPosts))
-            .build();
+                .id(post.getId())
+                .hostId(host.getId())
+                .hostNick(host.getNickname())
+                .longitude(post.getLocation().getX())
+                .latitude(post.getLocation().getY())
+                .store(post.getStore())
+                .minPrice(post.getMinPrice())
+                .deliveryCost(post.getDeliveryCost())
+                .menus(getNickMenus(userPosts))
+                .sumPrice(getSumPrice(userPosts, post))
+                .deadline(getDeadline(getDeadline(post)))
+                .status(post.getPostStatus())
+                .role(getRoleByUserAndUserPosts(user, userPosts))
+                .build();
     }
 
     @Override
@@ -107,20 +112,12 @@ public class PostReadServiceImpl implements PostReadService {
         if (category.equals(CategoryEnum.ALL.toString())) {
             posts = findPage(page);
 
-        } else if (checkIfCategoryEnum(category)) {
-            CategoryEnum categoryEnum = CategoryEnum.valueOf(category);
-            Pageable pageable = PageRequest.of(page, pagesize,
-                Sort.by("deadline").descending());
-
-            posts = postRepository.findAllByCategoryEquals(pageable, categoryEnum)
-                .getContent();
-
         } else {
             Pageable pageable = PageRequest.of(page, pagesize,
-                Sort.by("deadline").descending());
+                    Sort.by("deadline").descending());
 
             posts = postRepository.findAllByCuisineEquals(pageable, category)
-                .getContent();
+                    .getContent();
         }
         return postsToBriefResponses(posts);
     }
@@ -131,32 +128,31 @@ public class PostReadServiceImpl implements PostReadService {
 
         if (category.equals(CategoryEnum.ALL.toString())) {
             return getAllPosts(page, user);
-        } else if (checkIfCategoryEnum(category)) {
-            CategoryEnum categoryEnum = CategoryEnum.valueOf(category);
-            posts = postCustomRepository.getPostsByCategory(page, user, categoryEnum);
         } else {
-            posts = postCustomRepository.getPostsByCuisine(page, user, category);
+            TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                    .withCuisine(category)
+                    .orderByDistance(user)
+                    .build();
+            posts = postCustomRepository.getPosts(query,page);
         }
         return postsToBriefResponses(posts);
     }
 
     @Override
     public List<BriefPostResponse> getStatusPostsByCategory(int page, String category,
-        String status, User user) {
+                                                            String status, User user) {
         PostStatusEnum statusEnum = PostStatusEnum.valueOf(status);
 
         if (category.equals(CategoryEnum.ALL.toString())) {
             return getAllStatusPosts(page, statusEnum, user);
 
-        } else if (checkIfCategoryEnum(category)) {
-            CategoryEnum categoryEnum = CategoryEnum.valueOf(category);
-            List<Post> posts = postCustomRepository.getPostsByStatusAndCategory(page,
-                statusEnum, categoryEnum, user);
-            return postsToBriefResponses(posts);
-
         } else {
-            List<Post> posts = postCustomRepository.getPostsByStatusAndCuisine(page,
-                statusEnum, category, user);
+            TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                    .withCuisine(category)
+                    .withStatus(statusEnum)
+                    .orderByDistance(user)
+                    .build();
+            List<Post> posts = postCustomRepository.getPosts(query,page);
             return postsToBriefResponses(posts);
         }
     }
@@ -165,23 +161,32 @@ public class PostReadServiceImpl implements PostReadService {
     public List<BriefPostResponse> searchPostForAnyone(int page, String keyword) {
         Pageable pageWithTenPosts = PageRequest.of(page, pagesize, Sort.by("deadline").descending());
         List<Post> posts = postRepository.findPostByStoreContaining(pageWithTenPosts, keyword)
-            .getContent();
+                .getContent();
         return postsToBriefResponses(posts);
     }
 
     @Override
     public List<BriefPostResponse> searchPost(int page, String keyword, User user) {
 
-        List<Post> posts = postCustomRepository.getPostsByKeyword(page, user, keyword);
+        TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                .withKeyword(keyword)
+                .orderByDistance(user)
+                .build();
+        List<Post> posts = postCustomRepository.getPosts(query,page);
         return postsToBriefResponses(posts);
     }
 
     @Override
     public List<BriefPostResponse> searchStatusPost(int page, String keyword, String status,
-        User user) {
+                                                    User user) {
         PostStatusEnum statusEnum = PostStatusEnum.valueOf(status);
 
-        List<Post> posts = postCustomRepository.getPostsByStatusAndKeyword(page, statusEnum, keyword, user);
+        TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                .withKeyword(keyword)
+                .withStatus(statusEnum)
+                .orderByDistance(user)
+                .build();
+        List<Post> posts = postCustomRepository.getPosts(query,page);
         return postsToBriefResponses(posts);
     }
 
@@ -194,18 +199,18 @@ public class PostReadServiceImpl implements PostReadService {
 
     private List<BriefPostResponse> postsToBriefResponses(List<Post> posts) {
         return posts.stream()
-            .map((Post post) ->
-                BriefPostResponse
-                    .builder()
-                    .id(post.getId())
-            .author(getAuthorNick(getUserPostsByPost(post)))
-                    .store(post.getStore())
-                    .deadline(getDeadline(getDeadline(post)))
-                    .minPrice(post.getMinPrice())
-                    .sumPrice(getSumPrice(getUserPostsByPost(post), post))
-                    .status(post.getPostStatus())
-            .build())
-            .toList();
+                .map((Post post) ->
+                        BriefPostResponse
+                                .builder()
+                                .id(post.getId())
+                                .author(getAuthorNick(getUserPostsByPost(post)))
+                                .store(post.getStore())
+                                .deadline(getDeadline(getDeadline(post)))
+                                .minPrice(post.getMinPrice())
+                                .sumPrice(getSumPrice(getUserPostsByPost(post), post))
+                                .status(post.getPostStatus())
+                                .build())
+                .toList();
     }
 
     private User getAuthor(List<UserPost> userPosts) {
@@ -269,7 +274,7 @@ public class PostReadServiceImpl implements PostReadService {
 
     private Post getPostById(Long postId) {
         Post post = postRepository.findById(postId)
-            .orElseThrow(() -> new GlobalException(PostErrorCode.NOT_FOUND_POST));
+                .orElseThrow(() -> new GlobalException(PostErrorCode.NOT_FOUND_POST));
         return post;
     }
 
@@ -279,13 +284,13 @@ public class PostReadServiceImpl implements PostReadService {
 
     private List<NickMenusResponse> getNickMenus(List<UserPost> userposts) {
         List<NickMenusResponse> menus =
-            //List<UserPost> -> List<NickMenusResponse>
-            userposts.stream()
-                .map((UserPost userpost) -> new NickMenusResponse(userpost.getUser().getNickname(),
-                    //List<Menu> menus -> List<MenuResponse>
-                    getUserMenus(userpost.getUser(), userpost.getPost()).stream().map(
-                        (Menu menu) -> new MenuResponse(menu.getId(), menu.getMenuname(),
-                            menu.getPrice())).toList())).toList();
+                //List<UserPost> -> List<NickMenusResponse>
+                userposts.stream()
+                        .map((UserPost userpost) -> new NickMenusResponse(userpost.getUser().getNickname(),
+                                //List<Menu> menus -> List<MenuResponse>
+                                getUserMenus(userpost.getUser(), userpost.getPost()).stream().map(
+                                        (Menu menu) -> new MenuResponse(menu.getId(), menu.getMenuname(),
+                                                menu.getPrice())).toList())).toList();
         return menus;
     }
 
@@ -305,26 +310,24 @@ public class PostReadServiceImpl implements PostReadService {
     private List<BriefPostResponse> getAllPosts(int page, User user) {
         List<Post> posts;
 
-        if (user.getLatitude() == null || user.getLongitude() == null) {
+        if (user.getLocation() == null) {
             posts = findPage(page);
         } else {
-            posts = postCustomRepository.getPostsByDistance(page, user);
+            TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                    .orderByDistance(user)
+                    .build();
+            posts = postCustomRepository.getPosts(query,page);
         }
         return postsToBriefResponses(posts);
     }
 
     private List<BriefPostResponse> getAllStatusPosts(int page, PostStatusEnum status, User user) {
-        List<Post> posts = postCustomRepository.getPostsByStatus(page, status, user);
+        TypedQuery<Post> query = new PostQueryBuilder(entityManager)
+                .withStatus(status)
+                .orderByDistance(user)
+                .build();
+        List<Post> posts = postCustomRepository.getPosts(query,page);
         return postsToBriefResponses(posts);
-    }
-
-    private boolean checkIfCategoryEnum(String category) {
-        for (CategoryEnum c : CategoryEnum.values()) {
-            if (c.name().equals(category)) {
-                return true;
-            }
-        }
-        return false;
     }
 
 }

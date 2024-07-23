@@ -3,23 +3,18 @@ package com.moayo.moayoeats.backend.domain.post.entity;
 import com.moayo.moayoeats.backend.domain.menu.entity.Menu;
 import com.moayo.moayoeats.backend.domain.offer.entity.Offer;
 import com.moayo.moayoeats.backend.global.entity.BaseTime;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import java.time.LocalDateTime;
-import java.util.List;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.PrecisionModel;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -32,10 +27,7 @@ public class Post extends BaseTime {
     private Long id;
 
     @Column
-    private Double latitude;
-
-    @Column
-    private Double longitude;
+    private Point location;
 
     @Column(nullable = false)
     private String store;
@@ -48,10 +40,6 @@ public class Post extends BaseTime {
 
     @Column(nullable = false)
     private Integer deliveryCost;
-
-    @Column
-    @Enumerated(EnumType.STRING)
-    private CategoryEnum category;
 
     @Column
     private String cuisine;
@@ -73,19 +61,29 @@ public class Post extends BaseTime {
     private PostStatusEnum postStatus;
 
     @Builder
-    public Post(String store, Integer minPrice, Integer deliveryCost,
-        CategoryEnum category, LocalDateTime deadline, PostStatusEnum postStatus, Double latitude,
-        Double longitude, String cuisine) {
+    public Post(
+            String store,
+            Integer minPrice,
+            Integer deliveryCost,
+            LocalDateTime deadline,
+            PostStatusEnum postStatus,
+            String cuisine,
+            Double latitude,
+            Double longitude
+    ) {
         this.store = store;
         this.minPrice = minPrice;
         this.amountIsSatisfied = false;
         this.deliveryCost = deliveryCost;
         this.deadline = deadline;
-        this.category = category;
         this.postStatus = postStatus;
-        this.latitude = latitude;
-        this.longitude = longitude;
         this.cuisine = cuisine;
+        this.location = setLocation(longitude, latitude);
+    }
+
+    private Point setLocation(double longitude, double latitude){
+        GeometryFactory geomFactory = new GeometryFactory(new PrecisionModel(), 4326);//4326: Point용 SRID
+        return geomFactory.createPoint(new Coordinate(longitude, latitude));
     }
 
     public void closeApplication() {

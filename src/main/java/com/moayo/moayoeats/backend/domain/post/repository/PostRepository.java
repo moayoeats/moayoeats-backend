@@ -12,11 +12,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     Optional<Post> findById(Long postId);
 
-    Optional<List<Post>> findAllByCategoryEquals(CategoryEnum category);
-
     List<Post> findAll();
-
-    Page<Post> findAllByCategoryEquals(Pageable pageable,CategoryEnum category);
 
     Page<Post> findAllByCuisineEquals(Pageable pageable,String category);
 
