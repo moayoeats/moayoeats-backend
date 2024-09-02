@@ -82,6 +82,6 @@
 - [토큰이 바로 적용되지 않은 문제](https://github.com/moayoeats/moayoeats/wiki/%ED%8A%B8%EB%9F%AC%EB%B8%94%EC%8A%88%ED%8C%85-%7C-%ED%86%A0%ED%81%B0%EC%9D%B4-%EB%B0%94%EB%A1%9C-%EC%A0%81%EC%9A%A9%EB%90%98%EC%A7%80-%EC%95%8A%EB%8A%94-%EB%AC%B8%EC%A0%9C)
 
 
-***
+*
 ## ✨성능 개선
 - [Spatial Index 적용해서 조회 성능 58.28% 개선](https://github.com/moayoeats/moayoeats/wiki/%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%7C-Spatial-Index-%EC%A0%81%EC%9A%A9%ED%95%B4%EC%84%9C-%EC%A1%B0%ED%9A%8C-%EC%84%B1%EB%8A%A5-58.28%25-%EA%B0%9C%EC%84%A0)
